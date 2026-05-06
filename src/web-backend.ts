@@ -11,11 +11,11 @@ type MeasureNativeOptions = {
 }
 
 export interface WebBackendModule {
-  segmentAndMeasure(text: string, font: FontDescriptor, options?: MeasureNativeOptions): NativeSegmentResult
-  batchSegmentAndMeasure(texts: string[], font: FontDescriptor, options?: MeasureNativeOptions): NativeSegmentResult[]
+  segmentAndMeasure(text: string, font: FontDescriptor, options?: MeasureNativeOptions | null): NativeSegmentResult
+  batchSegmentAndMeasure(texts: string[], font: FontDescriptor, options?: MeasureNativeOptions | null): NativeSegmentResult[]
   measureGraphemeWidths(segment: string, font: FontDescriptor): number[]
   remeasureMerged(segments: string[], font: FontDescriptor): number[]
-  segmentAndMeasureAsync(text: string, font: FontDescriptor, options?: MeasureNativeOptions): Promise<NativeSegmentResult>
+  segmentAndMeasureAsync(text: string, font: FontDescriptor, options?: MeasureNativeOptions | null): Promise<NativeSegmentResult>
   measureTextHeight(text: string, font: FontDescriptor, maxWidth: number, lineHeight: number): { height: number; lineCount: number }
   clearNativeCache(): void
   setNativeCacheSize(size: number): void
@@ -126,7 +126,7 @@ function getCachedOrMeasure(ctx: MeasureContext, font: FontDescriptor, segment: 
 
 // ─── Public: createWebBackend ────────────────────────────
 export function createWebBackend(): WebBackendModule {
-  function doSegmentAndMeasure(text: string, font: FontDescriptor, options?: MeasureNativeOptions): NativeSegmentResult {
+  function doSegmentAndMeasure(text: string, font: FontDescriptor, options?: MeasureNativeOptions | null): NativeSegmentResult {
     if (!text) return { segments: [], isWordLike: [], widths: [] }
     const ctx = getMeasureContext()
     if (!ctx) throw new Error('[expo-pretext] No canvas available for web measurement')

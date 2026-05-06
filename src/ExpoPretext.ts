@@ -16,13 +16,13 @@ export interface ExpoPretextNativeModule extends InstanceType<typeof NativeModul
   segmentAndMeasure(
     text: string,
     font: FontDescriptor,
-    options?: MeasureNativeOptions
+    options?: MeasureNativeOptions | null
   ): NativeSegmentResult
 
   batchSegmentAndMeasure(
     texts: string[],
     font: FontDescriptor,
-    options?: MeasureNativeOptions
+    options?: MeasureNativeOptions | null
   ): NativeSegmentResult[]
 
   measureGraphemeWidths(
@@ -38,7 +38,7 @@ export interface ExpoPretextNativeModule extends InstanceType<typeof NativeModul
   segmentAndMeasureAsync(
     text: string,
     font: FontDescriptor,
-    options?: MeasureNativeOptions
+    options?: MeasureNativeOptions | null
   ): Promise<NativeSegmentResult>
 
   measureTextHeight(

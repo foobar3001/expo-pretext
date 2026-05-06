@@ -7,7 +7,14 @@ import {
 } from './build'
 import { layout, measureNaturalWidth } from './layout'
 import { cacheNativeResult, clearJSCache, tryResolveAllFromCache } from './cache'
-import { textStyleToFontDescriptor, getFontKey, getLineHeight, warnIfFontNotLoaded, applyLetterSpacingInPlace } from './font-utils'
+import {
+  textStyleToFontDescriptor,
+  getFontKey,
+  getLineHeight,
+  warnIfFontNotLoaded,
+  applyLetterSpacingInPlace,
+  toNativeMeasureOptions,
+} from './font-utils'
 import { getEngineProfile } from './engine-profile'
 import type {
   TextStyle,
@@ -73,9 +80,7 @@ function flushPending(): void {
   for (const [fontKey, group] of groups) {
     const font = textStyleToFontDescriptor(group[0]!.style)
     const opts = group[0]!.options
-    const nativeOpts = opts
-      ? { whiteSpace: opts.whiteSpace, locale: opts.locale }
-      : undefined
+    const nativeOpts = toNativeMeasureOptions(opts)
 
     try {
       const results = native.batchSegmentAndMeasure(
@@ -110,9 +115,7 @@ function segmentAndMeasureWithCache(
   }
 
   const font = textStyleToFontDescriptor(style)
-  const nativeOptions = options
-    ? { whiteSpace: options.whiteSpace, locale: options.locale }
-    : undefined
+  const nativeOptions = toNativeMeasureOptions(options)
 
   const result = native.segmentAndMeasure(text, font, nativeOptions)
   applyLetterSpacingInPlace(result.widths, result.segments, style.letterSpacing)
@@ -181,6 +184,84 @@ function buildWidthMap(result: NativeSegmentResult): Map<string, number> {
   return map
 }
 
+/**
+ * `analyzeText` merges consecutive native segments into single `analysis.texts[i]`
+ * strings that are often absent from `widthMap` (keys are native pieces only).
+ * Without merged widths, `build.ts` uses `parentWidth === 0` and `lookupWidth`
+ * returns 0 for graphemes — collapsing line widths and under-counting wrapped lines.
+ *
+ * When `segments.join('')` matches `analysis.normalized`, sum native widths over
+ * each text run's code-unit range (proportional split for partial segments).
+ */
+function enrichWidthMapForMergedAnalysisSegments(
+  widthMap: Map<string, number>,
+  analysis: ReturnType<typeof analyzeText>,
+  nativeSegments: string[],
+  nativeWidths: number[],
+): void {
+  if (nativeSegments.length !== nativeWidths.length) return
+  const nativeJoined = nativeSegments.join('')
+  if (nativeJoined.length === 0 || nativeJoined !== analysis.normalized) return
+
+  let pos = 0
+  // nativeSegmentsを分析結果の区間に合わせて再編成
+  const segBounds: { start: number; end: number; width: number }[] = []
+  for (let i = 0; i < nativeSegments.length; i++) {
+    const t = nativeSegments[i]!
+    const w = nativeWidths[i]!
+    const start = pos
+    const end = pos + t.length
+    segBounds.push({ start, end, width: w })
+    pos = end
+  }
+
+  // analysis.textsの各区間に対して、nativeSegmentsの区間と重なる部分を求め、
+  // widthを文字列の比率で分割してwidthMapに追加する
+  for (let mi = 0; mi < analysis.len; mi++) {
+    if (analysis.kinds[mi] !== 'text') continue
+    const text = analysis.texts[mi]!
+    if (text.length === 0 || widthMap.has(text)) continue
+
+    // analysis.textsの区間の取り出し
+    const rangeStart = analysis.starts[mi]!
+    const rangeEnd = rangeStart + text.length
+    // analysis.textsの区間がnativeSegmentsの区間を超えている場合はスキップ（これはありえないはず）
+    if (rangeEnd > nativeJoined.length) continue
+    // analysis.textsの区間がnativeSegmentsの区間と一致しない場合はスキップ（これはありえないはず）
+    if (nativeJoined.slice(rangeStart, rangeEnd) !== text) continue
+
+    // nativeSegmentsの区間と重なる部分を求め、widthを文字列の比率で分割してsumに加算する
+    let sum = 0
+    for (const b of segBounds) {
+      // analysis.textsの区間に重なる位置までスキップ
+      if (b.end <= rangeStart) continue
+      // analysis.textsの区間が終わったらanalysis.textsのwidthの計算完了
+      if (b.start >= rangeEnd) break
+      // nativeSegmentsの区間とanalysis.textsの区間の重なる部分を求める
+      const ov0 = Math.max(rangeStart, b.start)
+      const ov1 = Math.min(rangeEnd, b.end)
+      if (ov0 >= ov1) continue
+
+      // nativeSegmentsの区間の文字数
+      const pieceLen = b.end - b.start
+      if (pieceLen <= 0) continue
+      // nativeSegmentsの区間とanalysis.textsの区間の重なる部分が一致している場合は、
+      // widthをそのまま加算する
+      // nativeSegmentsの区間とanalysis.textsの区間の重なる部分が一致していない場合は、
+      // widthを文字数の比率で分割してsumに加算する
+      if (ov0 === b.start && ov1 === b.end) {
+        sum += b.width
+      } else {
+        const ovLen = ov1 - ov0
+        sum += (ovLen / pieceLen) * b.width
+      }
+    }
+    if (sum > 0) {
+      widthMap.set(text, sum)
+    }
+  }
+}
+
 // --- Bridge PrepareOptions (types.ts) to LayoutPrepareOptions (layout.ts) ---
 
 function toLayoutOptions(options?: PrepareOptions): LayoutPrepareOptions | undefined {
@@ -214,6 +295,7 @@ export function prepare(
     }
   }
   const widthMap = buildWidthMap(result)
+  enrichWidthMapForMergedAnalysisSegments(widthMap, analysis, result.segments, result.widths)
   return buildPreparedText(analysis, widthMap, style, toLayoutOptions(options))
 }
 
@@ -241,6 +323,7 @@ export function prepareWithSegments(
     }
   }
   const widthMap = buildWidthMap(result)
+  enrichWidthMapForMergedAnalysisSegments(widthMap, analysis, result.segments, result.widths)
   return buildPreparedTextWithSegments(analysis, widthMap, style, toLayoutOptions(options))
 }
 

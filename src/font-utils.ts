@@ -1,5 +1,5 @@
 // src/font-utils.ts
-import type { TextStyle, FontDescriptor } from './types'
+import type { PrepareOptions, TextStyle, FontDescriptor } from './types'
 import { getNativeModule } from './ExpoPretext'
 
 /**
@@ -31,10 +31,22 @@ export function textStyleToFontDescriptor(style: TextStyle): FontDescriptor {
   return {
     fontFamily: resolveFontFamily(style.fontFamily),
     fontSize: style.fontSize,
-    fontWeight: style.fontWeight,
-    fontStyle: style.fontStyle,
-    letterSpacing: style.letterSpacing,
+    fontWeight: style.fontWeight ?? '400',
+    fontStyle: style.fontStyle ?? 'normal',
+    letterSpacing: style.letterSpacing ?? 0,
   }
+}
+
+/**
+ * Options map for native segment APIs — omit undefined entries so the
+ * Kotlin bridge never receives Map values it cannot convert.
+ */
+export function toNativeMeasureOptions(options?: PrepareOptions): Record<string, string> | null {
+  if (!options) return null
+  const out: Record<string, string> = {}
+  if (options.whiteSpace != null) out.whiteSpace = options.whiteSpace
+  if (options.locale != null) out.locale = options.locale
+  return Object.keys(out).length > 0 ? out : null
 }
 
 export function getFontKey(style: TextStyle): string {

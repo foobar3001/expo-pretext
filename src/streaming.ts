@@ -1,6 +1,6 @@
 import { getNativeModule } from './ExpoPretext'
 import { prepare } from './prepare'
-import { textStyleToFontDescriptor, getFontKey } from './font-utils'
+import { textStyleToFontDescriptor, getFontKey, toNativeMeasureOptions } from './font-utils'
 import { cacheNativeResult } from './cache'
 import type { TextStyle, PreparedText, PrepareOptions } from './types'
 
@@ -41,9 +41,7 @@ export function prepareStreaming(
     const newSuffix = text.slice(prev.sourceText.length)
     if (newSuffix.length > 0) {
       const font = textStyleToFontDescriptor(style)
-      const nativeOpts = options
-        ? { whiteSpace: options.whiteSpace, locale: options.locale }
-        : undefined
+      const nativeOpts = toNativeMeasureOptions(options)
       const result = native.segmentAndMeasure(newSuffix, font, nativeOpts)
       const fontKey = getFontKey(style)
       cacheNativeResult(fontKey, result.segments, result.widths)
