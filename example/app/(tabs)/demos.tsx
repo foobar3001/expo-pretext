@@ -23,6 +23,7 @@ import { BreakoutTextDemo } from '../../components/demos/BreakoutText'
 import { TextPathDemo } from '../../components/demos/TextPath'
 import { ReadMoreDemo } from '../../components/demos/ReadMore'
 import { HeadlinesFeedDemo } from '../../components/demos/HeadlinesFeed'
+import { HeadlinesFeedJaDemo } from '../../components/demos/HeadlinesFeedJa'
 import { AccessibilityDemo } from '../../components/demos/Accessibility'
 import { DebugOverlayDemo } from '../../components/demos/DebugOverlay'
 import { SnapshotTestingDemo } from '../../components/demos/SnapshotTesting'
@@ -43,6 +44,7 @@ const sections: { title: string; data: Demo[] }[] = [
     data: [
       { id: 'read-more', title: 'Read More / Less', api: 'truncateText() + useTypewriterLayout()', desc: 'Truncated preview with typewriter reveal on expand', component: ReadMoreDemo },
       { id: 'headlines-feed', title: 'Headlines Feed (10K)', api: 'useFlashListHeights().getHeight()', desc: 'Plain-text FlashList v2 with exact pre-measured heights', component: HeadlinesFeedDemo },
+      { id: 'headlines-feed-ja', title: 'Headlines Feed JP (10K)', api: 'useFlashListHeights().getHeight()', desc: 'Japanese plain-text FlashList with exact pre-measured heights', component: HeadlinesFeedJaDemo },
       { id: 'markdown-chat', title: 'AI Chat', api: 'FlashList + useStreamingLayout()', desc: '10,000 messages with rich markdown and streaming', component: ChatScreen },
       { id: 'tight-bubbles', title: 'Tight Chat Bubbles', api: 'walkLineRanges() + layout()', desc: 'Shrinkwrap bubbles — minimum width that keeps line count', component: TightBubblesDemo },
       { id: 'accordion', title: 'Accordion Heights', api: 'prepare() + layout()', desc: 'Expand/collapse with pre-computed heights', component: AccordionDemo },
