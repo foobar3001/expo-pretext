@@ -9,7 +9,9 @@ const textStyleConfig = { fontFamily: 'System', fontSize: 16, lineHeight: 24 }
 
 function AccuracyRow({ text, testWidth }: { text: string; testWidth: number }) {
   const [actual, setActual] = useState<number | null>(null)
-  const containerWidth = testWidth - 8
+  // textBox has horizontal padding (4*2) and border (1*2),
+  // so Text content width is testWidth - 10.
+  const containerWidth = testWidth - 10
   const predicted = useTextHeight(text, textStyleConfig, containerWidth)
   const diff = actual !== null ? Math.abs(predicted - actual) : null
   const pass = diff !== null ? diff < 2 : null
@@ -39,7 +41,7 @@ function AccuracyRow({ text, testWidth }: { text: string; testWidth: number }) {
         </View>
       </View>
       <View style={[s.textBox, { width: testWidth }]}>
-        <Text style={s.sampleText} onLayout={e => setActual(e.nativeEvent.layout.height)}>
+        <Text style={[s.sampleText, textStyleConfig]} onLayout={e => setActual(e.nativeEvent.layout.height)}>
           {text}
         </Text>
       </View>
