@@ -4,6 +4,8 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Typeface
+import android.text.Layout
+import android.text.StaticLayout
 import android.text.TextPaint
 import com.facebook.react.common.assets.ReactFontManager
 import expo.modules.kotlin.modules.Module
@@ -182,6 +184,12 @@ class ExpoPretextModule : Module() {
                 "lineGap" to metrics.leading.toDouble(),
             )
         }
+
+        // ── measureTextHeight ────────────────────────────────────────────
+        // Returns RN-like wrapped text height using Android StaticLayout.
+        Function("measureTextHeight") { text: String, font: Map<String, Any>, maxWidth: Double, lineHeight: Double ->
+            measureTextHeightInternal(text, font, maxWidth, lineHeight)
+        }
     }
 
     // ── Core implementation ─────────────────────────────────────────────────
@@ -267,6 +275,32 @@ class ExpoPretextModule : Module() {
         return segments.map { seg ->
             cachedMeasure(seg, paint, fontKey)
         }
+    }
+
+    private fun measureTextHeightInternal(
+        text: String,
+        fontMap: Map<String, Any>,
+        maxWidth: Double,
+        lineHeight: Double,
+    ): Map<String, Any> {
+        if (text.isEmpty()) {
+            return mapOf("height" to 0.0, "lineCount" to 0)
+        }
+
+        val paint = getOrCreatePaint(fontMap)
+        val widthPx = maxOf(1, kotlin.math.floor(maxWidth).toInt())
+        val layout = StaticLayout.Builder
+            .obtain(text, 0, text.length, paint, widthPx)
+            .setAlignment(Layout.Alignment.ALIGN_NORMAL)
+            .setIncludePad(false)
+            .build()
+
+        val lineCount = layout.lineCount
+        val height = if (lineCount <= 0) 0.0 else kotlin.math.ceil(lineCount * lineHeight)
+        return mapOf(
+            "height" to height,
+            "lineCount" to lineCount,
+        )
     }
 
     // ── Segmentation helpers ────────────────────────────────────────────────
