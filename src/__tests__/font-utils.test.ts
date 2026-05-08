@@ -23,6 +23,7 @@ describe('font-utils', () => {
         fontSize: 16,
         fontWeight: '700',
         fontStyle: 'italic',
+        letterSpacing: 0,
       })
     })
 
@@ -31,8 +32,9 @@ describe('font-utils', () => {
       expect(desc).toEqual({
         fontFamily: 'Arial',
         fontSize: 14,
-        fontWeight: undefined,
-        fontStyle: undefined,
+        fontWeight: '400',
+        fontStyle: 'normal',
+        letterSpacing: 0,
       })
     })
   })

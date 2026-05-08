@@ -140,8 +140,8 @@ describe('letter-spacing in cache key + font descriptor', () => {
     expect(desc.letterSpacing).toBe(1.5)
   })
 
-  test('undefined letterSpacing is preserved as undefined (not 0)', () => {
+  test('undefined letterSpacing defaults to 0', () => {
     const desc = textStyleToFontDescriptor({ fontFamily: 'Inter', fontSize: 16 })
-    expect(desc.letterSpacing).toBeUndefined()
+    expect(desc.letterSpacing).toBe(0)
   })
 })
