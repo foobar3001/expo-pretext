@@ -1,6 +1,6 @@
 {
   "name": "@foobar3001/expo-pretext",
-  "version": "1.1.0-foobar3001.0",
+  "version": "1.1.0-foobar3001.1",
   "description": "DOM-free multiline text height prediction for React Native. Port of Pretext.",
   "main": "src/index.ts",
   "types": "src/index.ts",
